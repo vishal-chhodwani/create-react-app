@@ -1,220 +1,396 @@
-# Create React App [![Build Status](https://dev.azure.com/facebook/create-react-app/_apis/build/status/facebook.create-react-app?branchName=main)](https://dev.azure.com/facebook/create-react-app/_build/latest?definitionId=1&branchName=main) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-green.svg)](https://github.com/facebook/create-react-app/blob/main/CONTRIBUTING.md)
+# react-dev-utils
 
-<img alt="Logo" align="right" src="https://create-react-app.dev/img/logo.svg" width="20%" />
+This package includes some utilities used by [Create React App](https://github.com/facebook/create-react-app).<br>
+Please refer to its documentation:
 
-Create React apps with no build configuration.
-
-- [Creating an App](#creating-an-app) – How to create a new app.
+- [Getting Started](https://facebook.github.io/create-react-app/docs/getting-started) – How to create a new app.
 - [User Guide](https://facebook.github.io/create-react-app/) – How to develop apps bootstrapped with Create React App.
 
-Create React App works on macOS, Windows, and Linux.<br>
-If something doesn’t work, please [file an issue](https://github.com/facebook/create-react-app/issues/new).<br>
-If you have questions or need help, please ask in [GitHub Discussions](https://github.com/facebook/create-react-app/discussions).
+## Usage in Create React App Projects
 
-## Quick Overview
+These utilities come by default with [Create React App](https://github.com/facebook/create-react-app). **You don’t need to install it separately in Create React App projects.**
 
-```sh
-npx create-react-app my-app
-cd my-app
-npm start
+## Usage Outside of Create React App
+
+If you don’t use Create React App, or if you [ejected](https://facebook.github.io/create-react-app/docs/available-scripts#npm-run-eject), you may keep using these utilities. Their development will be aligned with Create React App, so major versions of these utilities may come out relatively often. Feel free to fork or copy and paste them into your projects if you’d like to have more control over them, or feel free to use the old versions. Not all of them are React-specific, but we might make some of them more React-specific in the future.
+
+### Entry Points
+
+There is no single entry point. You can only import individual top-level modules.
+
+#### `new InterpolateHtmlPlugin(htmlWebpackPlugin: HtmlWebpackPlugin, replacements: {[key:string]: string})`
+
+This webpack plugin lets us interpolate custom variables into `index.html`.<br>
+It works in tandem with [HtmlWebpackPlugin](https://github.com/ampedandwired/html-webpack-plugin) 2.x via its [events](https://github.com/ampedandwired/html-webpack-plugin#events).
+
+```js
+var path = require('path');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
+var InterpolateHtmlPlugin = require('react-dev-utils/InterpolateHtmlPlugin');
+
+// webpack config
+var publicUrl = '/my-custom-url';
+
+module.exports = {
+  output: {
+    // ...
+    publicPath: publicUrl + '/',
+  },
+  // ...
+  plugins: [
+    // Generates an `index.html` file with the <script> injected.
+    new HtmlWebpackPlugin({
+      inject: true,
+      template: path.resolve('public/index.html'),
+    }),
+    // Makes the public URL available as %PUBLIC_URL% in index.html, e.g.:
+    // <link rel="icon" href="%PUBLIC_URL%/favicon.ico">
+    new InterpolateHtmlPlugin(HtmlWebpackPlugin, {
+      PUBLIC_URL: publicUrl,
+      // You can pass any key-value pairs, this was just an example.
+      // WHATEVER: 42 will replace %WHATEVER% with 42 in index.html.
+    }),
+    // ...
+  ],
+  // ...
+};
 ```
 
-If you've previously installed `create-react-app` globally via `npm install -g create-react-app`, we recommend you uninstall the package using `npm uninstall -g create-react-app` or `yarn global remove create-react-app` to ensure that npx always uses the latest version.
+#### `new InlineChunkHtmlPlugin(htmlWebpackPlugin: HtmlWebpackPlugin, tests: Regex[])`
 
-_([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) comes with npm 5.2+ and higher, see [instructions for older npm versions](https://gist.github.com/gaearon/4064d3c23a77c74a3614c498a8bb1c5f))_
+This webpack plugin inlines script chunks into `index.html`.<br>
+It works in tandem with [HtmlWebpackPlugin](https://github.com/ampedandwired/html-webpack-plugin) 4.x.
 
-Then open [http://localhost:3000/](http://localhost:3000/) to see your app.<br>
-When you’re ready to deploy to production, create a minified bundle with `npm run build`.
+```js
+var path = require('path');
+var HtmlWebpackPlugin = require('html-webpack-plugin');
+var InlineChunkHtmlPlugin = require('react-dev-utils/InlineChunkHtmlPlugin');
 
-<p align='center'>
-<img src='https://cdn.jsdelivr.net/gh/facebook/create-react-app@27b42ac7efa018f2541153ab30d63180f5fa39e0/screencast.svg' width='600' alt='npm start'>
-</p>
+// webpack config
+var publicUrl = '/my-custom-url';
 
-### Get Started Immediately
-
-You **don’t** need to install or configure tools like webpack or Babel.<br>
-They are preconfigured and hidden so that you can focus on the code.
-
-Create a project, and you’re good to go.
-
-## Creating an App
-
-**You’ll need to have Node 14.0.0 or later version on your local development machine** (but it’s not required on the server). We recommend using the latest LTS version. You can use [nvm](https://github.com/creationix/nvm#installation) (macOS/Linux) or [nvm-windows](https://github.com/coreybutler/nvm-windows#node-version-manager-nvm-for-windows) to switch Node versions between different projects.
-
-To create a new app, you may choose one of the following methods:
-
-### npx
-
-```sh
-npx create-react-app my-app
+module.exports = {
+  output: {
+    // ...
+    publicPath: publicUrl + '/',
+  },
+  // ...
+  plugins: [
+    // Generates an `index.html` file with the <script> injected.
+    new HtmlWebpackPlugin({
+      inject: true,
+      template: path.resolve('public/index.html'),
+    }),
+    // Inlines chunks with `runtime` in the name
+    new InlineChunkHtmlPlugin(HtmlWebpackPlugin, [/runtime/]),
+    // ...
+  ],
+  // ...
+};
 ```
 
-_([npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) is a package runner tool that comes with npm 5.2+ and higher, see [instructions for older npm versions](https://gist.github.com/gaearon/4064d3c23a77c74a3614c498a8bb1c5f))_
+#### `new ModuleScopePlugin(appSrc: string | string[], allowedFiles?: string[])`
 
-### npm
+This webpack plugin ensures that relative imports from app's source directories don't reach outside of it.
 
-```sh
-npm init react-app my-app
+```js
+var path = require('path');
+var ModuleScopePlugin = require('react-dev-utils/ModuleScopePlugin');
+
+module.exports = {
+  // ...
+  resolve: {
+    // ...
+    plugins: [
+      new ModuleScopePlugin(paths.appSrc, [paths.appPackageJson]),
+      // ...
+    ],
+    // ...
+  },
+  // ...
+};
 ```
 
-_`npm init <initializer>` is available in npm 6+_
+#### `checkRequiredFiles(files: Array<string>): boolean`
 
-### Yarn
+Makes sure that all passed files exist.<br>
+Filenames are expected to be absolute.<br>
+If a file is not found, prints a warning message and returns `false`.
 
-```sh
-yarn create react-app my-app
+```js
+var path = require('path');
+var checkRequiredFiles = require('react-dev-utils/checkRequiredFiles');
+
+if (
+  !checkRequiredFiles([
+    path.resolve('public/index.html'),
+    path.resolve('src/index.js'),
+  ])
+) {
+  process.exit(1);
+}
 ```
 
-_[`yarn create <starter-kit-package>`](https://yarnpkg.com/lang/en/docs/cli/create/) is available in Yarn 0.25+_
+#### `clearConsole(): void`
 
-It will create a directory called `my-app` inside the current folder.<br>
-Inside that directory, it will generate the initial project structure and install the transitive dependencies:
+Clears the console, hopefully in a cross-platform way.
 
-```
-my-app
-├── README.md
-├── node_modules
-├── package.json
-├── .gitignore
-├── public
-│   ├── favicon.ico
-│   ├── index.html
-│   └── manifest.json
-└── src
-    ├── App.css
-    ├── App.js
-    ├── App.test.js
-    ├── index.css
-    ├── index.js
-    ├── logo.svg
-    └── serviceWorker.js
-    └── setupTests.js
+```js
+var clearConsole = require('react-dev-utils/clearConsole');
+
+clearConsole();
+console.log('Just cleared the screen!');
 ```
 
-No configuration or complicated folder structures, only the files you need to build your app.<br>
-Once the installation is done, you can open your project folder:
+#### `eslintFormatter(results: Object): string`
 
-```sh
-cd my-app
+This is our custom ESLint formatter that integrates well with Create React App console output.<br>
+You can use the default one instead if you prefer so.
+
+```js
+const eslintFormatter = require('react-dev-utils/eslintFormatter');
+
+// In your webpack config:
+// ...
+module: {
+  rules: [
+    {
+      test: /\.(js|jsx)$/,
+      include: paths.appSrc,
+      enforce: 'pre',
+      use: [
+        {
+          loader: 'eslint-loader',
+          options: {
+            // Pass the formatter:
+            formatter: eslintFormatter,
+          },
+        },
+      ],
+    },
+  ];
+}
 ```
 
-Inside the newly created project, you can run some built-in commands:
+#### `FileSizeReporter`
 
-### `npm start` or `yarn start`
+##### `measureFileSizesBeforeBuild(buildFolder: string): Promise<OpaqueFileSizes>`
 
-Runs the app in development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Captures JS and CSS asset sizes inside the passed `buildFolder`. Save the result value to compare it after the build.
 
-The page will automatically reload if you make changes to the code.<br>
-You will see the build errors and lint warnings in the console.
+##### `printFileSizesAfterBuild(webpackStats: WebpackStats, previousFileSizes: OpaqueFileSizes, buildFolder: string, maxBundleGzipSize?: number, maxChunkGzipSize?: number)`
 
-<p align='center'>
-<img src='https://cdn.jsdelivr.net/gh/marionebl/create-react-app@9f6282671c54f0874afd37a72f6689727b562498/screencast-error.svg' width='600' alt='Build errors'>
-</p>
+Prints the JS and CSS asset sizes after the build, and includes a size comparison with `previousFileSizes` that were captured earlier using `measureFileSizesBeforeBuild()`. `maxBundleGzipSize` and `maxChunkGzipSizemay` may optionally be specified to display a warning when the main bundle or a chunk exceeds the specified size (in bytes).
 
-### `npm test` or `yarn test`
+```js
+var {
+  measureFileSizesBeforeBuild,
+  printFileSizesAfterBuild,
+} = require('react-dev-utils/FileSizeReporter');
 
-Runs the test watcher in an interactive mode.<br>
-By default, runs tests related to files changed since the last commit.
+measureFileSizesBeforeBuild(buildFolder).then(previousFileSizes => {
+  return cleanAndRebuild().then(webpackStats => {
+    printFileSizesAfterBuild(webpackStats, previousFileSizes, buildFolder);
+  });
+});
+```
 
-[Read more about testing.](https://facebook.github.io/create-react-app/docs/running-tests)
+#### `formatWebpackMessages({errors: Array<string>, warnings: Array<string>}): {errors: Array<string>, warnings: Array<string>}`
 
-### `npm run build` or `yarn build`
+Extracts and prettifies warning and error messages from webpack [stats](https://github.com/webpack/docs/wiki/node.js-api#stats) object.
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```js
+var webpack = require('webpack');
+var config = require('../config/webpack.config.dev');
+var formatWebpackMessages = require('react-dev-utils/formatWebpackMessages');
 
-The build is minified and the filenames include the hashes.<br>
+var compiler = webpack(config);
 
-Your app is ready to be deployed.
+compiler.hooks.invalid.tap('invalid', function () {
+  console.log('Compiling...');
+});
 
-## User Guide
+compiler.hooks.done.tap('done', function (stats) {
+  var rawMessages = stats.toJson({}, true);
+  var messages = formatWebpackMessages(rawMessages);
+  if (!messages.errors.length && !messages.warnings.length) {
+    console.log('Compiled successfully!');
+  }
+  if (messages.errors.length) {
+    console.log('Failed to compile.');
+    messages.errors.forEach(e => console.log(e));
+    return;
+  }
+  if (messages.warnings.length) {
+    console.log('Compiled with warnings.');
+    messages.warnings.forEach(w => console.log(w));
+  }
+});
+```
 
-You can find detailed instructions on using Create React App and many tips in [its documentation](https://facebook.github.io/create-react-app/).
+#### `printBuildError(error: Object): void`
 
-## How to Update to New Versions?
+Prettify some known build errors.
+Pass an Error object to log a prettified error message in the console.
 
-Please refer to the [User Guide](https://facebook.github.io/create-react-app/docs/updating-to-new-releases) for this and other information.
+```
+  const printBuildError = require('react-dev-utils/printBuildError')
+  try {
+    build()
+  } catch(e) {
+    printBuildError(e) // logs prettified message
+  }
+```
 
-## Philosophy
+#### `getProcessForPort(port: number): string`
 
-- **One Dependency:** There is only one build dependency. It uses webpack, Babel, ESLint, and other amazing projects, but provides a cohesive curated experience on top of them.
+Finds the currently running process on `port`.
+Returns a string containing the name and directory, e.g.,
 
-- **No Configuration Required:** You don't need to configure anything. A reasonably good configuration of both development and production builds is handled for you so you can focus on writing code.
+```
+create-react-app
+in /Users/developer/create-react-app
+```
 
-- **No Lock-In:** You can “eject” to a custom setup at any time. Run a single command, and all the configuration and build dependencies will be moved directly into your project, so you can pick up right where you left off.
+```js
+var getProcessForPort = require('react-dev-utils/getProcessForPort');
 
-## What’s Included?
+getProcessForPort(3000);
+```
 
-Your environment will have everything you need to build a modern single-page React app:
+#### `launchEditor(fileName: string, lineNumber: number): void`
 
-- React, JSX, ES6, TypeScript and Flow syntax support.
-- Language extras beyond ES6 like the object spread operator.
-- Autoprefixed CSS, so you don’t need `-webkit-` or other prefixes.
-- A fast interactive unit test runner with built-in support for coverage reporting.
-- A live development server that warns about common mistakes.
-- A build script to bundle JS, CSS, and images for production, with hashes and sourcemaps.
-- An offline-first [service worker](https://developers.google.com/web/fundamentals/getting-started/primers/service-workers) and a [web app manifest](https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/), meeting all the [Progressive Web App](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app) criteria. (_Note: Using the service worker is opt-in as of `react-scripts@2.0.0` and higher_)
-- Hassle-free updates for the above tools with a single dependency.
+On macOS, tries to find a known running editor process and opens the file in it. It can also be explicitly configured by `REACT_EDITOR`, `VISUAL`, or `EDITOR` environment variables. For example, you can put `REACT_EDITOR=atom` in your `.env.local` file, and Create React App will respect that.
 
-Check out [this guide](https://github.com/nitishdayal/cra_closer_look) for an overview of how these tools fit together.
+#### `noopServiceWorkerMiddleware(servedPath: string): ExpressMiddleware`
 
-The tradeoff is that **these tools are preconfigured to work in a specific way**. If your project needs more customization, you can ["eject"](https://facebook.github.io/create-react-app/docs/available-scripts#npm-run-eject) and customize it, but then you will need to maintain this configuration.
+Returns Express middleware that serves a `${servedPath}/service-worker.js` that resets any previously set service worker configuration. Useful for development.
 
-## Popular Alternatives
+#### `redirectServedPathMiddleware(servedPath: string): ExpressMiddleware`
 
-Create React App is a great fit for:
+Returns Express middleware that redirects to `${servedPath}/${req.path}`, if `req.url`
+does not start with `servedPath`. Useful for development.
 
-- **Learning React** in a comfortable and feature-rich development environment.
-- **Starting new single-page React applications.**
-- **Creating examples** with React for your libraries and components.
+#### `openBrowser(url: string): boolean`
 
-Here are a few common cases where you might want to try something else:
+Attempts to open the browser with a given URL.<br>
+On Mac OS X, attempts to reuse an existing Chrome tab via AppleScript.<br>
+Otherwise, falls back to [opn](https://github.com/sindresorhus/opn) behavior.
 
-- If you want to **try React** without hundreds of transitive build tool dependencies, consider [using a single HTML file or an online sandbox instead](https://reactjs.org/docs/getting-started.html#try-react).
+```js
+var path = require('path');
+var openBrowser = require('react-dev-utils/openBrowser');
 
-- If you need to **integrate React code with a server-side template framework** like Rails, Django or Symfony, or if you’re **not building a single-page app**, consider using [nwb](https://github.com/insin/nwb), or [Neutrino](https://neutrino.js.org/) which are more flexible. For Rails specifically, you can use [Rails Webpacker](https://github.com/rails/webpacker). For Symfony, try [Symfony's webpack Encore](https://symfony.com/doc/current/frontend/encore/reactjs.html).
+if (openBrowser('http://localhost:3000')) {
+  console.log('The browser tab has been opened!');
+}
+```
 
-- If you need to **publish a React component**, [nwb](https://github.com/insin/nwb) can [also do this](https://github.com/insin/nwb#react-components-and-libraries), as well as [Neutrino's react-components preset](https://neutrino.js.org/packages/react-components/).
+#### `printHostingInstructions(appPackage: Object, publicUrl: string, publicPath: string, buildFolder: string, useYarn: boolean): void`
 
-- If you want to do **server rendering** with React and Node.js, check out [Next.js](https://nextjs.org/) or [Razzle](https://github.com/jaredpalmer/razzle). Create React App is agnostic of the backend, and only produces static HTML/JS/CSS bundles.
+Prints hosting instructions after the project is built.
 
-- If your website is **mostly static** (for example, a portfolio or a blog), consider using [Gatsby](https://www.gatsbyjs.org/) or [Next.js](https://nextjs.org/). Unlike Create React App, Gatsby pre-renders the website into HTML at build time. Next.js supports both server rendering and pre-rendering.
+Pass your parsed `package.json` object as `appPackage`, your URL where you plan to host the app as `publicUrl`, `output.publicPath` from your webpack configuration as `publicPath`, the `buildFolder` name, and whether to `useYarn` in instructions.
 
-- Finally, if you need **more customization**, check out [Neutrino](https://neutrino.js.org/) and its [React preset](https://neutrino.js.org/packages/react/).
+```js
+const appPackage = require(paths.appPackageJson);
+const publicUrl = paths.publicUrlOrPath;
+const publicPath = config.output.publicPath;
+printHostingInstructions(appPackage, publicUrl, publicPath, 'build', true);
+```
 
-All of the above tools can work with little to no configuration.
+#### `WebpackDevServerUtils`
 
-If you prefer configuring the build yourself, [follow this guide](https://reactjs.org/docs/add-react-to-a-website.html).
+##### `choosePort(host: string, defaultPort: number): Promise<number | null>`
 
-## React Native
+Returns a Promise resolving to either `defaultPort` or next available port if the user confirms it is okay to do. If the port is taken and the user has refused to use another port, or if the terminal is not interactive and can’t present user with the choice, resolves to `null`.
 
-Looking for something similar, but for React Native?<br>
-Check out [Expo CLI](https://github.com/expo/expo-cli).
+##### `createCompiler(args: Object): WebpackCompiler`
 
-## Contributing
+Creates a webpack compiler instance for WebpackDevServer with built-in helpful messages.
 
-We'd love to have your helping hand on `create-react-app`! See [CONTRIBUTING.md](CONTRIBUTING.md) for more information on what we're looking for and how to get started.
+The `args` object accepts a number of properties:
 
-## Supporting Create React App
+- **appName** `string`: The name that will be printed to the terminal.
+- **config** `Object`: The webpack configuration options to be provided to the webpack constructor.
+- **urls** `Object`: To provide the `urls` argument, use `prepareUrls()` described below.
+- **useYarn** `boolean`: If `true`, yarn instructions will be emitted in the terminal instead of npm.
+- **useTypeScript** `boolean`: If `true`, TypeScript type checking will be enabled. Be sure to provide the `devSocket` argument above if this is set to `true`.
+- **webpack** `function`: A reference to the webpack constructor.
 
-Create React App is a community maintained project and all contributors are volunteers. If you'd like to support the future development of Create React App then please consider donating to our [Open Collective](https://opencollective.com/create-react-app).
+##### `prepareProxy(proxySetting: string, appPublicFolder: string, servedPathname: string): Object`
 
-## Credits
+Creates a WebpackDevServer `proxy` configuration object from the `proxy` setting in `package.json`.
 
-This project exists thanks to all the people who [contribute](CONTRIBUTING.md).<br>
-<a href="https://github.com/facebook/create-react-app/graphs/contributors"><img src="https://opencollective.com/create-react-app/contributors.svg?width=890&button=false" /></a>
+##### `prepareUrls(protocol: string, host: string, port: number, pathname: string = '/'): Object`
 
-Thanks to [Netlify](https://www.netlify.com/) for hosting our documentation.
+Returns an object with local and remote URLs for the development server. Pass this object to `createCompiler()` described above.
 
-## Acknowledgements
+#### `webpackHotDevClient`
 
-We are grateful to the authors of existing related projects for their ideas and collaboration:
+This is an alternative client for [WebpackDevServer](https://github.com/webpack/webpack-dev-server) that shows a syntax error overlay.
 
-- [@eanplatter](https://github.com/eanplatter)
-- [@insin](https://github.com/insin)
-- [@mxstbr](https://github.com/mxstbr)
+It currently supports only webpack 3.x.
 
-## License
+```js
+// webpack development config
+module.exports = {
+  // ...
+  entry: [
+    // You can replace the line below with these two lines if you prefer the
+    // stock client:
+    // require.resolve('webpack-dev-server/client') + '?/',
+    // require.resolve('webpack/hot/dev-server'),
+    'react-dev-utils/webpackHotDevClient',
+    'src/index',
+  ],
+  // ...
+};
+```
 
-Create React App is open source software [licensed as MIT](https://github.com/facebook/create-react-app/blob/main/LICENSE). The Create React App logo is licensed under a [Creative Commons Attribution 4.0 International license](https://creativecommons.org/licenses/by/4.0/).
+#### `getCSSModuleLocalIdent(context: Object, localIdentName: String, localName: String, options: Object): string`
+
+Creates a class name for CSS Modules that uses either the filename or folder name if named `index.module.css`.
+
+For `MyFolder/MyComponent.module.css` and class `MyClass` the output will be `MyComponent.module_MyClass__[hash]`
+For `MyFolder/index.module.css` and class `MyClass` the output will be `MyFolder_MyClass__[hash]`
+
+```js
+const getCSSModuleLocalIdent = require('react-dev-utils/getCSSModuleLocalIdent');
+
+// In your webpack config:
+// ...
+module: {
+  rules: [
+    {
+      test: /\.module\.css$/,
+      use: [
+        require.resolve('style-loader'),
+        {
+          loader: require.resolve('css-loader'),
+          options: {
+            importLoaders: 1,
+            modules: {
+              getLocalIdent: getCSSModuleLocalIdent,
+            },
+          },
+        },
+        {
+          loader: require.resolve('postcss-loader'),
+          options: postCSSLoaderOptions,
+        },
+      ],
+    },
+  ];
+}
+```
+
+#### `getCacheIdentifier(environment: string, packages: string[]): string`
+
+Returns a cache identifier (string) consisting of the specified environment and related package versions, e.g.,
+
+```js
+var getCacheIdentifier = require('react-dev-utils/getCacheIdentifier');
+
+getCacheIdentifier('prod', ['react-dev-utils', 'chalk']); // # => 'prod:react-dev-utils@5.0.0:chalk@3.0.0'
+```
